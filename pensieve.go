@@ -76,12 +76,12 @@ func NewSegmentIDMapper(client *pilosa.Client, frame *pilosa.Frame) *SegmentIDMa
 	}
 }
 
-func NewKruxBitIterator(reader io.Reader, mapper *SegmentIDMapper) *KruxBitIterator {
+func NewKruxBitIterator(reader io.Reader, mapper *SegmentIDMapper, viewerIndex uint64) *KruxBitIterator {
 	return &KruxBitIterator{
 		reader:      reader,
 		line:        0,
 		viewerValue: "",
-		viewerIndex: 0,
+		viewerIndex: viewerIndex,
 		scanner:     bufio.NewScanner(reader),
 		mapper:      mapper,
 	}
@@ -115,7 +115,7 @@ func (c *KruxBitIterator) NextBit() (pilosa.Bit, error) {
 	return pilosa.Bit{}, io.EOF
 }
 
-func eat(client *pilosa.Client, frame *pilosa.Frame, mapper *SegmentIDMapper, path string) {
+func eat(client *pilosa.Client, frame *pilosa.Frame, mapper *SegmentIDMapper, path string, viewerIndex uint64) uint64 {
 	log.Println("Attempting to ingest", path)
 	f, err := os.Open(path)
 	if err != nil {
@@ -129,12 +129,13 @@ func eat(client *pilosa.Client, frame *pilosa.Frame, mapper *SegmentIDMapper, pa
 	}
 	defer gr.Close()
 
-	iterator := NewKruxBitIterator(gr, mapper)
+	iterator := NewKruxBitIterator(gr, mapper, viewerIndex)
 	err = client.ImportFrame(frame, iterator, 10000000)
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Println("done")
+	return iterator.viewerIndex
 }
 
 func main() {
@@ -167,7 +168,9 @@ func main() {
 	}
 
 	mapper := NewSegmentIDMapper(client, frame)
+	viewerIndex := uint64(0)
 	for i := 0; i < len(files); i++ {
-		eat(client, frame, mapper, files[i])
+		viewerIndex = eat(client, frame, mapper, files[i], viewerIndex)
+		log.Println("Ingested", viewerIndex, "viewers")
 	}
 }
