@@ -18,7 +18,7 @@ for id in sys.argv[1:]:
     if not r.count_items:
         print("Segment %s not found" % id)
         sys.exit(1)
-    rowid = r.count_items[0].id
+    rowid = int(r.count_items[0].id)
     rows.append(field.row(rowid))
 
 count = client.query(index.count(index.intersect(*rows))).result.count

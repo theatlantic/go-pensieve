@@ -5,8 +5,9 @@ This is an example project to show the feasibility of calculating Krux segment o
 Run these setup commands first:
 
 ```shell
-> brew install pilosa golang
+> brew install pilosa golang python
 > go get github.com/pilosa/go-pilosa
+> git clone git@github.com:theatlantic/go-pensieve.git && cd go-pensieve
 > go build pensieve.go
 > pip install git+ssh://git@github.com/theatlantic/python-pilosa.git@fix-top-n
 ```
